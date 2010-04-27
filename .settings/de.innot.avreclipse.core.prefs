@@ -1,0 +1,8 @@
+#Sat Feb 27 13:49:47 CST 2010
+avrtarget/ClockFrequency=16000000
+avrtarget/ExtRAMSize=0
+avrtarget/ExtendedRAM=false
+avrtarget/MCUType=at90can128
+avrtarget/UseEEPROM=false
+avrtarget/UseExtendedRAMforHeap=true
+eclipse.preferences.version=1
