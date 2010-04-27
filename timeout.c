@@ -19,6 +19,15 @@ static uint16_t		time_ms = 0;
 #define timeout_timer_enable() TIMSK1 |= _BV (OCIE1A);
 #define timeout_timer_disable() TIMSK1 &= ~_BV (OCIE1A);
 
+void
+prv_timeout_ordered_insert (timeout_t *to);
+
+void
+prv_timeout_unlink (timeout_t *to);
+
+/**
+ * 1ms interrupt handler
+ */
 ISR (TIMER1_COMPA_vect)
 {
 	if (head==0)
@@ -44,7 +53,7 @@ ISR (TIMER1_COMPA_vect)
 
 		if (cur->recurring)
 		{
-			timeout_reset (cur, 0, 0);
+			timeout_reset (cur, 0);
 		}
 		else
 		{
@@ -61,7 +70,6 @@ timeout_init (void)
 	TCCR1B = _BV (WGM12) | _BV (CS11) | _BV (CS10);			/// CTC mode, Main clock/64 = 250 kHz
 	OCR1AH = 0x00;											/// Timer counts up to 250
 	OCR1AL = 0xfa;
-	//TIMSK1 = _BV (OCIE1A);									/// Interrupt when the timer matches the count
 }
 
 timeout_t *
@@ -72,14 +80,48 @@ timeout_set
 	uint8_t		recurring
 )
 {
-	timeout_t *cur;
 	timeout_t *to = malloc (sizeof (timeout_t));
+
+	to->expires_at = time_ms + delay_ms;
+	to->callback = callback;
+
+	prv_timeout_ordered_insert (to);
+
+	timeout_timer_enable ();
+	return to;
+}
+
+void
+timeout_clear
+(
+	timeout_t	*to
+)
+{
+	prv_timeout_unlink (to);
+	free (to);
+}
+
+void
+timeout_reset
+(
+	timeout_t	*to,
+	uint16_t	delay_ms
+)
+{
+	prv_timeout_unlink (to);
+	to->expires_at = time_ms + (delay_ms ? delay_ms : to->delay_ms);			/// New expiration time
+	prv_timeout_ordered_insert (to);
+}
+
+/** End of public functions **/
+
+void
+prv_timeout_ordered_insert (timeout_t *to)
+{
+	timeout_t *cur;
 
 	ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
 	{
-		to->expires_at = time_ms + delay_ms;
-		to->callback = callback;
-
 		if (head==0)	/// Empty list
 		{
 			head = to;
@@ -110,45 +152,26 @@ timeout_set
 			}
 		}
 	}
-
-	timeout_timer_enable ();
-	return to;
 }
 
 void
-timeout_clear
-(
-	timeout_t	*timeout
-)
+prv_timeout_unlink (timeout_t *to)
 {
 	ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
 	{
-		if (timeout == head)
+		if (to == head)
 		{
-			head = timeout->next;
-			timeout->next->prev = 0;
-			//timeout_timer_disable ();
+			head = to->next;
+			to->next->prev = 0;
 		}
-		else if (timeout->next == 0)
+		else if (to->next == 0)
 		{
-			timeout->prev->next = 0;
+			to->prev->next = 0;
 		}
 		else
 		{
-			timeout->prev->next = timeout->next;
-			timeout->next->prev = timeout->prev;
+			to->prev->next = to->next;
+			to->next->prev = to->prev;
 		}
 	}
-
-	free (timeout);
-}
-
-void
-timeout_reset
-(
-	timeout_t	*timeout,
-	uint16_t	delay_ms,
-	void		(*callback)(void)
-)
-{
 }

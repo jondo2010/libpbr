@@ -1,0 +1,15 @@
+libpbr
+
+Library of common code and headers used by multiple modules.
+
+dta_can_impl.{h,c}
+  - Implements CAN interface for receiving DTA CAN messages
+
+module_params_can_impl.{h,c}
+  - Implements CAN interface for broadcasting out module parameter messages
+
+param.{h,c}
+  - Module parameter constants, defines, etc.
+
+timeout.{h,c}
+  - Allows setting abritrary timeouts with function callbacks with ms resolution.
