@@ -10,32 +10,14 @@
 
 #include <libcan/can.h>
 
-typedef enum module_params_fsm_state_t
-{
-	waiting_for_remote,
-	sending
-}
-module_params_fsm_state_t;
-
 void
 module_params_can_impl_init
 (
-	uint8_t			mob_index,
-	uint32_t		id,
-	const void		*(*get_param_struct)(void),
-	const uint8_t	struct_size
-);
-
-/**
- * Callback after the config mob replies to a remote request
- * for the modules' config data. If the config data spans
- * more than 8 bytes, after the initial 8 byte reply we start
- * sending regular messages with the rest.
- */
-void
-module_params_can_impl_tx
-(
-	uint8_t mob_index
+	const uint8_t	mob_index,
+	const uint32_t	mod_id,
+	const uint8_t	*(*get_param)(uint8_t p, uint8_t data[8]),
+	const uint8_t	*(*set_param)(uint8_t p, uint8_t data[8]),
+	const uint8_t	num_parameters
 );
 
 #endif /* MODULE_PARAMS_CAN_IMPL_H_ */

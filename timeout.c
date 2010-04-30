@@ -82,8 +82,10 @@ timeout_set
 {
 	timeout_t *to = malloc (sizeof (timeout_t));
 
+	to->delay_ms = delay_ms;
 	to->expires_at = time_ms + delay_ms;
 	to->callback = callback;
+	to->recurring = recurring;
 
 	prv_timeout_ordered_insert (to);
 
@@ -109,7 +111,10 @@ timeout_reset
 )
 {
 	prv_timeout_unlink (to);
-	to->expires_at = time_ms + (delay_ms ? delay_ms : to->delay_ms);			/// New expiration time
+	ATOMIC_BLOCK (ATOMIC_RESTORESTATE)
+	{
+		to->expires_at = time_ms + ((delay_ms > 0) ? delay_ms : to->delay_ms);			/// New expiration time
+	}
 	prv_timeout_ordered_insert (to);
 }
 

@@ -8,6 +8,8 @@
 #ifndef DTA_CAN_IMPL_H_
 #define DTA_CAN_IMPL_H_
 
+#include "dtafast.h"
+
 void
 dta_can_impl_init (const uint8_t mob_index);
 
